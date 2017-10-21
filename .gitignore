@@ -9,5 +9,5 @@
 *src_managed/
 *project/boot/
 *project/plugins/project/
-*.idea
+.idea
 *.iml
