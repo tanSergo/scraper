@@ -58,7 +58,7 @@ public class Arguments {
         /*Extracting parameters*/
         if (args.length == 0) System.out.println("No args");
         for (int i = 0; i < args.length; i++) {
-            System.out.println(args[i]);
+//            System.out.println(args[i]);
             if (i==0) {
                 if (isUrl(args[i])) {
                     urls.add(args[i]);

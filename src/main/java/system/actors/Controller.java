@@ -1,4 +1,4 @@
-package system;
+package system.actors;
 
 
 import akka.actor.ActorRef;
@@ -12,9 +12,9 @@ public class Controller extends UntypedAbstractActor {
     static class Done
     {
         private final String url;
-        private final Map<String, String> resultOfCounter;
+        private final Map<String, Map<String, String>> resultOfCounter;
 
-        public Done(String url, Map<String, String> resultOfCounter) {
+        public Done(String url, Map<String, Map<String, String>> resultOfCounter) {
             this.resultOfCounter = resultOfCounter;
             this.url = url;
         }
@@ -27,7 +27,8 @@ public class Controller extends UntypedAbstractActor {
         }
     }
 
-    static class Check
+
+        static class Check
     {
         private final String url;
         private final List<String> keywords;
@@ -56,22 +57,34 @@ public class Controller extends UntypedAbstractActor {
 
     private Set<ActorRef> children = new HashSet<>();
     private Map<String, Map<String, String>> results = new HashMap<>();
+    private Long dataProcessingTime = 0L;
 
     @Override
     public void onReceive(Object message) throws Throwable {
         if (message instanceof Done)
         {
             Done doneMessage = ((Done) message);
+            getContext().system().log().info("Controller get Done message {}" , message);
+
             if (results.containsKey(doneMessage.url)) {
-                results.get(doneMessage.url).putAll(doneMessage.resultOfCounter);
-            }
+                results.get(doneMessage.url).put("Processing time in nanoseconds", String.valueOf(dataProcessingTime));
+                results.get(doneMessage.url).putAll(doneMessage.resultOfCounter.get(doneMessage.url));
+             }
             else {
-                results.put(doneMessage.url, doneMessage.resultOfCounter);
+                Map<String , String> controllerResult = new HashMap<>();
+                controllerResult.putAll(doneMessage.resultOfCounter.get(doneMessage.url));
+                results.put(doneMessage.url, controllerResult);
             }
+
             children.remove(getSender());
+
             if (children.isEmpty())
             {
-                getContext().parent().tell(new Receptionist.ControllerDone(results), getSelf());
+                dataProcessingTime = System.nanoTime() - dataProcessingTime;
+                Map<String , String> time = new HashMap<>();
+                time.put("Processing time in nanoseconds", String.valueOf(dataProcessingTime));
+                results.get(doneMessage.url).putAll(time);
+                getContext().parent().tell(new Receptionist.ControllerDone(doneMessage.url, results), getSelf());
                 getContext().stop(getSelf());
             }
         }
@@ -79,6 +92,7 @@ public class Controller extends UntypedAbstractActor {
         {
             getContext().system().log().info("Controller get Check message {}", message);
             Check checkMessage = (Check) message;
+            dataProcessingTime = System.nanoTime();
             runCounters(checkMessage);
         }
     }

@@ -1,13 +1,12 @@
-package system;
+package system.actors;
 
 import akka.actor.UntypedAbstractActor;
-import system.parser.MyRegexParser;
+import system.parser.FullTextParser;
 import system.parser.Parser;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
@@ -48,6 +47,8 @@ public class WordCounter extends UntypedAbstractActor {
             Count countMessage = (Count) message;
             getContext().system().log().info("WordCounter get Count message {}", message);
             parseUrl(countMessage);
+            getContext().parent().tell(new Controller.Done(countMessage.url, results), getSelf());
+            getContext().stop(getSelf());
 
         } else {
             unhandled(message);
@@ -58,15 +59,33 @@ public class WordCounter extends UntypedAbstractActor {
         URL url = new URL(countMessage.url);
         BufferedReader in = new BufferedReader(
                 new InputStreamReader(url.openStream()));
-        String inputLine;
-        Parser parser = new MyRegexParser();
-        while ((inputLine = in.readLine()) != null) {
-            List<String> sequences = parser.parseString(inputLine, countMessage.keywords);
-            for (String sequence: sequences) {
-//                System.out.println(sequence);
+        Parser parser = new FullTextParser();
 
+        List<String> sentences = parser.parseUrl(in, parser, countMessage.keywords);
+
+        in.close();
+
+        if (countMessage.wordCount) {
+            if (results.containsKey(countMessage.url)) {
+                results.get(countMessage.url).put("Number of keywords", String.valueOf(sentences.size()));
+            } else {
+                Map<String, String> numberOfKeywords = new HashMap<>();
+                numberOfKeywords.put("Number of keywords", String.valueOf(sentences.size()));
+                results.put(countMessage.url, numberOfKeywords);
             }
         }
-        in.close();
+        if (countMessage.extractSentences) {
+            String text = "";
+            for (String sentence : sentences) {
+                text = text.concat(sentence);
+            }
+            if (results.containsKey(countMessage.url)) {
+                results.get(countMessage.url).put("Sentences with keywords", text);
+            } else {
+                Map<String, String> sentencesMap = new HashMap<>();
+                sentencesMap.put("Sentences with keywords", text);
+                results.put(countMessage.url, sentencesMap);
+            }
+        }
     }
 }

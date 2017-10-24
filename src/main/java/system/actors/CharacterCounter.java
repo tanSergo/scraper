@@ -1,14 +1,11 @@
-package system;
+package system.actors;
 
-import akka.actor.ActorRef;
 import akka.actor.UntypedAbstractActor;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +27,7 @@ public class CharacterCounter extends UntypedAbstractActor {
     }
 
     private Map<String, String> results = new HashMap<>();
+    private Map<String, Map<String, String>> propertyMap = new HashMap<>();
 
     @Override
     public void onReceive(Object message) throws Throwable {
@@ -37,10 +35,10 @@ public class CharacterCounter extends UntypedAbstractActor {
             getContext().system().log().info("CharacterCounter get Count message {}", message);
             Count countMessage = (Count) message;
             Long characters = countCharacters(countMessage);
-            Map<String, String> propertyMap = new HashMap<>();
-//            propertyMap.put("Number of characters", String.valueOf(characters));
             results.put("Number of characters", String.valueOf(characters));
-            getContext().parent().tell(new Controller.Done(countMessage.url, results), getSelf());
+
+            propertyMap.put(countMessage.url, results);
+            getContext().parent().tell(new Controller.Done(countMessage.url, propertyMap), getSelf());
             getContext().stop(getSelf());
         } else {
             unhandled(message);
