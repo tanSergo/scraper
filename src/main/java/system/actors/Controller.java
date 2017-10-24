@@ -11,10 +11,12 @@ public class Controller extends UntypedAbstractActor {
 
     static class Done
     {
+        private final String url;
         private final Map<String, String> resultOfCounter;
 
-        public Done(Map<String, String> resultOfCounter) {
+        public Done(String url, Map<String, String> resultOfCounter) {
             this.resultOfCounter = resultOfCounter;
+            this.url = url;
         }
 
         @Override
@@ -53,13 +55,19 @@ public class Controller extends UntypedAbstractActor {
     }
 
     private Set<ActorRef> children = new HashSet<>();
-    private Map<String, String> results = new HashMap<>();
+    private Map<String, Map<String, String>> results = new HashMap<>();
 
     @Override
     public void onReceive(Object message) throws Throwable {
         if (message instanceof Done)
         {
-            results.putAll(((Done) message).resultOfCounter);
+            Done doneMessage = ((Done) message);
+            if (results.containsKey(doneMessage.url)) {
+                results.get(doneMessage.url).putAll(doneMessage.resultOfCounter);
+            }
+            else {
+                results.put(doneMessage.url, doneMessage.resultOfCounter);
+            }
             children.remove(getSender());
             if (children.isEmpty())
             {

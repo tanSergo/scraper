@@ -24,14 +24,14 @@ public class Receptionist extends UntypedAbstractActor {
 
     static class TakeResults {
 
-        private final Map<String, String> results;
+        private final Map<String, Map<String, String>> results;
 
-        public TakeResults(Map<String, String> results)
+        public TakeResults(Map<String, Map<String, String>> results)
         {
             this.results = results;
         }
 
-        public Map<String, String> getResults()
+        public Map<String, Map<String, String>> getResults()
         {
             return results;
         }
@@ -45,9 +45,9 @@ public class Receptionist extends UntypedAbstractActor {
     }
 
     static class ControllerDone {
-        private final Map<String, String> controllerResults;
+        private final Map<String, Map<String, String>> controllerResults;
 
-        public ControllerDone(Map<String, String> controllerResults) {
+        public ControllerDone(Map<String, Map<String, String>> controllerResults) {
             this.controllerResults = controllerResults;
         }
 
@@ -62,17 +62,17 @@ public class Receptionist extends UntypedAbstractActor {
 
     private Set<ActorRef> controllers = new HashSet<>();
 
-    private Map<String, String> passingResults = new HashMap<>();
+    private Map<String, Map<String, String>> passingResults = new HashMap<>();
     private Map<ActorRef, ActorRef> controllerToRequestMap = new HashMap<>();
 
 
     @Override
     public void onReceive(Object message) throws Throwable {
         if (message instanceof CheckLinks) {
-            getContext().system().log().info(" Receptionist get CheckLinks message {}", message);
+            getContext().system().log().info("Receptionist get CheckLinks message {}", message);
             startParsing((CheckLinks)message);
         }else if (message instanceof ControllerDone) {
-            getContext().system().log().info(" Receptionist get ControllerDone message {}" , message);
+            getContext().system().log().info("Receptionist get ControllerDone message {}" , message);
             controllers.remove(getSender());
             passingResults.putAll(((ControllerDone) message).controllerResults);
             if (controllers.isEmpty()) {

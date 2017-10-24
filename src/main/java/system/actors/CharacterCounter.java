@@ -8,6 +8,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,12 +36,11 @@ public class CharacterCounter extends UntypedAbstractActor {
         if (message instanceof Count) {
             getContext().system().log().info("CharacterCounter get Count message {}", message);
             Count countMessage = (Count) message;
-            getContext().system().log().info("CharacterCounter ready to count");
             Long characters = countCharacters(countMessage);
-            getContext().system().log().info("CharacterCounter is done to count");
-            results.put(countMessage.url + ". Number of characters ", String.valueOf(characters));
-            getContext().system().log().info("CharacterCounter make own result {}", results);
-            getContext().parent().tell(new Controller.Done(results), getSelf());
+            Map<String, String> propertyMap = new HashMap<>();
+//            propertyMap.put("Number of characters", String.valueOf(characters));
+            results.put("Number of characters", String.valueOf(characters));
+            getContext().parent().tell(new Controller.Done(countMessage.url, results), getSelf());
             getContext().stop(getSelf());
         } else {
             unhandled(message);
